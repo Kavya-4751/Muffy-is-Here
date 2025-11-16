@@ -136,7 +136,7 @@ if (currentLevel === 2) {
 }
 
 if (currentLevel === 3) {
-    c.fillText("Bedroom — Press enter to drop the bone", canvas.width / 2, 50);
+    c.fillText("Bedroom — Press space to drop the bone", canvas.width / 2, 50);
 }
     player.velocity.x = 0;
     if (keys.d.pressed) player.velocity.x = 5;
