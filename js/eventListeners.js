@@ -10,9 +10,9 @@ window.addEventListener('keydown', (event) => {
        case 'd':
             keys.d.pressed = true;
             break
-       case 'enter':
-           keys.enter.pressed = true;
-               break
+       case ' ':
+           keys.space.pressed = true;
+           break
     }
 })
 

@@ -28,7 +28,8 @@ const player = new Player();
 const keys = {
     w: { pressed: false },
     a: { pressed: false },
-    d: { pressed: false }
+    d: { pressed: false },
+    space: { pressed: false }
 };
 
 
@@ -55,9 +56,9 @@ const kitchenDoor = {
 };
 const bedBox = {
     x: 700,
-    y: 300,
+    y: 400,
     width: 550,
-    height: 800
+    height: 300
 };
 
 function isColliding(player, box) {
@@ -72,23 +73,37 @@ function isColliding(player, box) {
 
 let bone = null;
 let boneActive = false;
-let _origKitchenDraw = backgroundKitchen.draw.bind(backgroundKitchen);
 
-function spawnBone(posx, posy) {
+// Store original draw methods for backgrounds
+const originalDrawMethods = new Map();
+originalDrawMethods.set(backgroundKitchen, backgroundKitchen.draw.bind(backgroundKitchen));
+originalDrawMethods.set(backgroundBedroom, backgroundBedroom.draw.bind(backgroundBedroom));
+
+// Generic function to override draw method to include bone
+function overrideDrawWithBone(background) {
+    background.draw = function() {
+        originalDrawMethods.get(background)();
+        if (boneActive && bone) bone.draw();
+    };
+}
+
+// Restore original draw method
+function restoreOriginalDraw(background) {
+    background.draw = originalDrawMethods.get(background);
+}
+
+function spawnBone(posx, posy, background) {
     bone = new Sprite({
         position: { x: posx, y: posy },
         imageSrc: './img/bone.png'
     });
     boneActive = true;
-    backgroundKitchen.draw = function() {
-        _origKitchenDraw();
-        if (boneActive && bone) bone.draw();
-    };
+    overrideDrawWithBone(background);
 }
 
-function removeBone() {
+function removeBone(background) {
     boneActive = false;
-    backgroundKitchen.draw = _origKitchenDraw;
+    restoreOriginalDraw(background);
 }
 
 function animate() {
@@ -104,7 +119,25 @@ function animate() {
         backgroundBedroom.draw();       
     }
     
+c.fillStyle = "white";
+c.font = "30px Arial";
+c.textAlign = "center";
 
+if (currentLevel === 1) {
+    c.fillText("Living Room", canvas.width / 2, 50);
+}
+
+if (currentLevel === 2) {
+    if (boneActive) {
+        c.fillText("Go collect the bone!", canvas.width / 2, 50);
+    } else {
+        c.fillText("Yay! Let's go to the bedroom.", canvas.width / 2, 50);
+    }
+}
+
+if (currentLevel === 3) {
+    c.fillText("Bedroom — Press enter to drop the bone", canvas.width / 2, 50);
+}
     player.velocity.x = 0;
     if (keys.d.pressed) player.velocity.x = 5;
     else if (keys.a.pressed) player.velocity.x = -5;
@@ -121,12 +154,12 @@ function animate() {
         player.position.y = 450;
 
         // spawn bone and set up kitchen draw
-        spawnBone(600,300);
+        spawnBone(600, 300, backgroundKitchen);
     }
 
     // Remove bone if player collides with boneBox in kitchen
     if (currentLevel === 2 && boneActive && isColliding(player, boneBox)) {
-        removeBone();
+        removeBone(backgroundKitchen);
     }
 
     if (currentLevel === 2 && boneActive === false && isColliding(player, livingRoomDoor)) {
@@ -139,14 +172,18 @@ function animate() {
         player.position.x = livingRoomDoor.x - player.width - 1;
         player.velocity.x = 0;
     }
-
     if (currentLevel === 3 && isColliding(player, bedBox)){
         player.velocity.x = 0;
         player.velocity.y = 0;
-        spawnBone(850,350);
-    } 
-}
 
+        // Only drop the bone and override draw once when Enter is pressed and bone is not already active
+        if (keys.space.pressed && !boneActive) {
+            spawnBone(700, 300, backgroundBedroom);
+            c.fillText("Yay! your best friend is happy now.", canvas.width / 2, 50);
+        } 
+    }
+
+}
 animate()
 
 
